@@ -1,0 +1,114 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/temp1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:gravity="left"
+        android:orientation="horizontal"
+        android:padding="@dimen/padding_medium"
+        android:textSize="20sp" >
+
+        <TextView
+            android:id="@+id/serverRoot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dip"
+            android:text="ServerRoot" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:id="@+id/currDir"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:orientation="horizontal" >
+            </LinearLayout>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/download_bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/remote_root"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingRight="1px"
+            android:text="远程目录" />
+
+        <Button
+            android:id="@+id/local_root"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingLeft="1px"
+            android:text="本地目录" />
+    </LinearLayout>
+<!-- com.example.ftp4j_demo2.view.ScreenHorizontalScrollView -->
+    <HorizontalScrollView
+        android:id="@+id/contentViw"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:fillViewport="true"
+        android:layout_above="@id/download_bottom_bar"
+        android:layout_below="@id/temp1"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+<!-- com.example.ftp4j_demo2.view.ScreenListView -->
+                <com.example.ftp4j_demo2.view.ScreenListView
+                    android:id="@+id/listviewRemoteFile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:cacheColorHint="#00000000" >
+                </com.example.ftp4j_demo2.view.ScreenListView>
+            </LinearLayout>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <com.example.ftp4j_demo2.view.ScreenListView
+                    android:id="@+id/listviewLocalFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:cacheColorHint="#00000000" >
+                </com.example.ftp4j_demo2.view.ScreenListView>
+            </LinearLayout>
+           
+        </LinearLayout>
+    </HorizontalScrollView>
+ 
+</RelativeLayout>
