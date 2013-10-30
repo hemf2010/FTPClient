@@ -23,9 +23,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewDebug;
 import android.view.ViewGroup;
-
-import com.example.ftp4j_demo2.R;
-import com.example.ftp4j_demo2.ext.LauncherLog;
+import android.util.Log;
+import com.android.launcher.R;
 
 /**
  * An abstraction of the original CellLayout which supports laying out items
@@ -48,10 +47,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
     private int mMaxGap;
     protected PagedViewCellLayoutChildren mChildren;
 
-    /// M: Record the original padding.
-    private int mOriginalPaddingLeft;
-    private int mOriginalPaddingRight;
-
     public PagedViewCellLayout(Context context) {
         this(context, null);
     }
@@ -71,11 +66,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
             resources.getDimensionPixelSize(R.dimen.apps_customize_cell_width);
         mOriginalCellHeight = mCellHeight =
             resources.getDimensionPixelSize(R.dimen.apps_customize_cell_height);
-
-        /// M: Record the original paddings.
-        mOriginalPaddingLeft = getPaddingLeft();
-        mOriginalPaddingRight = getPaddingRight();
-
         mCellCountX = LauncherModel.getCellCountX();
         mCellCountY = LauncherModel.getCellCountY();
         mOriginalWidthGap = mOriginalHeightGap = mWidthGap = mHeightGap = -1;
@@ -97,20 +87,12 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
     }
 
     void destroyHardwareLayers() {
-        if (LauncherLog.DEBUG_DRAW) {
-            LauncherLog.d(TAG, "destroyHardwareLayers: mChildren = " + mChildren + " ,this = " + this);
-        }
-
         // called when a page is no longer visible (triggered by loadAssociatedPages ->
         // removeAllViewsOnPage)
         setLayerType(LAYER_TYPE_NONE, null);
     }
 
     void createHardwareLayers() {
-        if (LauncherLog.DEBUG_DRAW) {
-            LauncherLog.d(TAG, "createHardwareLayers: mChildren = " + mChildren + ", this = " + this);
-        }
-
         // called when a page is visible (triggered by loadAssociatedPages -> syncPageItems)
         setLayerType(LAYER_TYPE_HARDWARE, null);
     }
@@ -150,20 +132,12 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
 
     @Override
     public void removeAllViewsOnPage() {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "removeAllViewsOnPage: mChildren = " + mChildren + ", this = " + this);
-        }
-
         mChildren.removeAllViews();
         destroyHardwareLayers();
     }
 
     @Override
     public void removeViewOnPageAt(int index) {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "removeViewOnPageAt: mChildren = " + mChildren + ", index = " + index);
-        }
-
         mChildren.removeViewAt(index);
     }
 
@@ -212,12 +186,10 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
         int heightSpecSize =  MeasureSpec.getSize(heightMeasureSpec);
 
         if (widthSpecMode == MeasureSpec.UNSPECIFIED || heightSpecMode == MeasureSpec.UNSPECIFIED) {
-            throw new RuntimeException("CellLayout cannot have UNSPECIFIED dimensions");
+ //           throw new RuntimeException("CellLayout cannot have UNSPECIFIED dimensions");
+             //TODO: zhengzc--Should have better resolved.                                                                      
+             Log.e(TAG, "CellLayout cannot have UNSPECIFIED dimensions" );
         }
-        
-        /// M: Restore the origin padding before measure process really processed
-        /// because we have increased the padding by gap to fix NE issue.
-        setPadding(mOriginalPaddingLeft, getPaddingTop(), mOriginalPaddingRight, getPaddingBottom());
 
         int numWidthGaps = mCellCountX - 1;
         int numHeightGaps = mCellCountY - 1;
@@ -229,13 +201,7 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
             int vFreeSpace = vSpace - (mCellCountY * mOriginalCellHeight);
             mWidthGap = Math.min(mMaxGap, numWidthGaps > 0 ? (hFreeSpace / numWidthGaps) : 0);
             mHeightGap = Math.min(mMaxGap,numHeightGaps > 0 ? (vFreeSpace / numHeightGaps) : 0);
-            if (LauncherLog.DEBUG_LAYOUT) {
-                LauncherLog.d(TAG, "onMeasure 0: mMaxGap = " + mMaxGap + ", numWidthGaps = "
-                        + numWidthGaps + ", hFreeSpace = " + hFreeSpace + ", mOriginalCellWidth ="
-                        + mOriginalCellWidth + ", mOriginalCellHeight = " + mOriginalCellHeight
-                        + ", mWidthGap = " + mWidthGap);
-            }  
-          
+
             mChildren.setGap(mWidthGap, mHeightGap);
         } else {
             mWidthGap = mOriginalWidthGap;
@@ -245,37 +211,11 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
         // Initial values correspond to widthSpecMode == MeasureSpec.EXACTLY
         int newWidth = widthSpecSize;
         int newHeight = heightSpecSize;
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "onMeasure 1: newWidth = " + newWidth + ", newHeight = " + newHeight
-                    + ", widthSpecMode = " + widthSpecMode + ",mPaddingLeft = " + getPaddingLeft()
-                    + ", mPaddingRight = " + getPaddingRight() + ",mCellCountX = " + mCellCountX
-                    + ", mCellWidth = " + mCellWidth + ", mWidthGap = " + mWidthGap
-                    + ", mOriginalWidthGap =" + mOriginalWidthGap + ", mOriginalHeightGap = "
-                    + mOriginalHeightGap + ", mOriginalCellWidth =" + mOriginalCellWidth
-                    + ", mOriginalCellHeight = " + mOriginalCellHeight + ", this = " + this);
-        }
-
         if (widthSpecMode == MeasureSpec.AT_MOST) {
             newWidth = getPaddingLeft() + getPaddingRight() + (mCellCountX * mCellWidth) +
                 ((mCellCountX - 1) * mWidthGap);
             newHeight = getPaddingTop() + getPaddingBottom() + (mCellCountY * mCellHeight) +
                 ((mCellCountY - 1) * mHeightGap);
-            if (LauncherLog.DEBUG_LAYOUT) {
-                LauncherLog.d(TAG, "onMeasure 2: newWidth = " + newWidth + ", newHeight = "
-                        + newHeight + ", this = " + this);
-            }
-            
-            /*
-             * M: We use the remain space as left padding and right padding to make
-             * the PagedViewCellLayout has the same width with the parent given
-             * size, so the getVisiblePages in PagedView will not return the
-             * wrong result.
-             */
-            if (newWidth != widthSpecSize) {
-                final int halfGap = (widthSpecSize - newWidth) >> 1;
-                setPadding(getPaddingLeft() + halfGap, getPaddingTop(), getPaddingRight()+ (widthSpecSize - newWidth - halfGap), getPaddingBottom());
-                newWidth = widthSpecSize;
-            }
             setMeasuredDimension(newWidth, newHeight);
         }
 
@@ -289,10 +229,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
                 MeasureSpec.makeMeasureSpec(newHeight - getPaddingTop() -
                         getPaddingBottom(), MeasureSpec.EXACTLY);
             child.measure(childWidthMeasureSpec, childheightMeasureSpec);
-        }
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "onMeasure 4: newWidth = " + newWidth + ", newHeight = " + newHeight
-                    + ", this = " + this);
         }
 
         setMeasuredDimension(newWidth, newHeight);
@@ -374,10 +310,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
         int spanX = (width + smallerSize) / smallerSize;
         int spanY = (height + smallerSize) / smallerSize;
 
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "getCellCountForDimensions width = " + width + ", height =" + height + ", spanX = " + spanX
-                    + ", spanY = " + spanY + ", this = " + this);
-        }
         return new int[] { spanX, spanY };
     }
 
@@ -401,11 +333,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
 
         // We know that we have to fit N cells with N-1 width gaps, so we just juggle to solve for N
         int n = Math.max(1, (availWidth + mWidthGap) / (mCellWidth + mWidthGap));
-        
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "estimateCellHSpan width = " + width
-                    + ", availWidth = " + availWidth + ", n = " + n + ", this = " + this);
-        }
 
         // We don't do anything fancy to determine if we squeeze another row in.
         return n;
@@ -422,36 +349,21 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
         // We know that we have to fit N cells with N-1 height gaps, so we juggle to solve for N
         int n = Math.max(1, (availHeight + mHeightGap) / (mCellHeight + mHeightGap));
 
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "estimateCellVSpan width = " + height
-                    + ", availHeight = " + availHeight + ", n = " + n + ", this = " + this);
-        }
         // We don't do anything fancy to determine if we squeeze another row in.
         return n;
     }
 
     /** Returns an estimated center position of the cell at the specified index */
     public int[] estimateCellPosition(int x, int y) {
-    	int[] result = new int[] {
+        return new int[] {
                 getPaddingLeft() + (x * mCellWidth) + (x * mWidthGap) + (mCellWidth / 2),
                 getPaddingTop() + (y * mCellHeight) + (y * mHeightGap) + (mCellHeight / 2)
         };
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "estimateCellPosition x = " + x + ", y = " + y
-                    + ", result[0] = " + result[0] + ", result[1] = " + result[1] + ", this = " + this);
-        }
-        return result;
     }
 
     public void calculateCellCount(int width, int height, int maxCellCountX, int maxCellCountY) {
         mCellCountX = Math.min(maxCellCountX, estimateCellHSpan(width));
         mCellCountY = Math.min(maxCellCountY, estimateCellVSpan(height));
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "calculateCellCount width = " + width
-                    + ", height = " + height + ", maxCellCountX = " + maxCellCountX
-                    + ", maxCellCountY = " + maxCellCountY + ", mCellCountX = " + mCellCountX
-                    + ", mCellCountY = " + mCellCountY + ", this = " + this);
-        }
         requestLayout();
     }
 
@@ -459,10 +371,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
      * Estimates the width that the number of hSpan cells will take up.
      */
     public int estimateCellWidth(int hSpan) {
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "estimeateCellWidth hSpan = " + hSpan
-                    + ", mCellWidth = " + mCellWidth + ", this = " + this);
-        }
         // TODO: we need to take widthGap into effect
         return hSpan * mCellWidth;
     }
@@ -471,10 +379,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
      * Estimates the height that the number of vSpan cells will take up.
      */
     public int estimateCellHeight(int vSpan) {
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "estimateCellHeight sSpan = " + vSpan
-                    + ", mCellHeight = " + mCellHeight + ", this = " + this);
-        }
         // TODO: we need to take heightGap into effect
         return vSpan * mCellHeight;
     }
@@ -492,15 +396,6 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
     @Override
     protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
         return new PagedViewCellLayout.LayoutParams(p);
-    }
-
-    @Override
-    public void setPadding(int left, int top, int right, int bottom) {
-        super.setPadding(left, top, right, bottom);
-
-        /// M: Record the origin padding and restore it before measure processed.
-        mOriginalPaddingLeft = getPaddingLeft();
-        mOriginalPaddingRight = getPaddingRight();
     }
 
     public static class LayoutParams extends ViewGroup.MarginLayoutParams {
@@ -590,7 +485,7 @@ public class PagedViewCellLayout extends ViewGroup implements Page {
             height = myCellVSpan * cellHeight + ((myCellVSpan - 1) * heightGap) -
                     topMargin - bottomMargin;
 
-            if (false) {  //shrakin
+            if (LauncherApplication.isScreenLarge()) {
                 x = hStartPadding + myCellX * (cellWidth + widthGap) + leftMargin;
                 y = vStartPadding + myCellY * (cellHeight + heightGap) + topMargin;
             } else {

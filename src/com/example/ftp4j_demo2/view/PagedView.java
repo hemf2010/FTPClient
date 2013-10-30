@@ -20,7 +20,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.appwidget.AppWidgetProviderInfo;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -48,8 +47,6 @@ import android.widget.Scroller;
 import java.util.ArrayList;
 
 import com.example.ftp4j_demo2.R;
-import com.example.ftp4j_demo2.ext.LauncherAnimUtils;
-import com.example.ftp4j_demo2.ext.LauncherLog;
 
 /**
  * An abstraction of the original Workspace which supports browsing through a
@@ -64,7 +61,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     private static final int MIN_LENGTH_FOR_FLING = 25;
 
     protected static final int PAGE_SNAP_ANIMATION_DURATION = 550;
-    protected static final int MAX_PAGE_SNAP_DURATION = 750;
     protected static final int SLOW_PAGE_SNAP_ANIMATION_DURATION = 950;
     protected static final float NANOTIME_DIV = 1000000000.0f;
 
@@ -187,16 +183,9 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     protected static final int sScrollIndicatorFadeInDuration = 150;
     protected static final int sScrollIndicatorFadeOutDuration = 650;
     protected static final int sScrollIndicatorFlashDuration = 650;
-    private boolean mScrollingPaused = false;
 
     // If set, will defer loading associated pages until the scrolling settles
     private boolean mDeferLoadAssociatedPagesUntilScrollCompletes;
-
-    /// M: add for IMTKWidget. @{
-    private static boolean sCanSendMessage = true;
-
-    private static boolean sCanCallEnterAppWidget = true;
-    /// @}
 
     public interface PageSwitchListener {
         void onPageSwitch(View newPage, int newPageIndex);
@@ -308,12 +297,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
      * the previous tab page.
      */
     protected void updateCurrentPageScroll() {
-	int totalChildCount = getChildCount();
-        if (mCurrentPage >= totalChildCount) {
-            LauncherLog.d(TAG, "updateCurrentPageScroll don't update: currentPage = " + mCurrentPage 
-		+ ", totalChildCount = " + totalChildCount);
-            return;
-        }
         int offset = getChildOffset(mCurrentPage);
         int relOffset = getRelativeChildOffset(mCurrentPage);
         int newX = offset - relOffset;
@@ -323,32 +306,9 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     }
 
     /**
-     * Called during AllApps/Home transitions to avoid unnecessary work. When that other animation
-     * ends, {@link #resumeScrolling()} should be called, along with
-     * {@link #updateCurrentPageScroll()} to correctly set the final state and re-enable scrolling.
-     */
-    void pauseScrolling() {
-        mScroller.forceFinished(true);
-        cancelScrollingIndicatorAnimations();
-        mScrollingPaused = true;
-    }
-
-    /**
-     * Enables scrolling again.
-     * @see #pauseScrolling()
-     */
-    void resumeScrolling() {
-        mScrollingPaused = false;
-    }
-    /**
      * Sets the current page.
      */
     void setCurrentPage(int currentPage) {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "setCurrentPage: currentPage = " + currentPage + ", mCurrentPage = "
-                    + mCurrentPage + ", mScrollX = " + mScroller.getCurrX() + ", this = " + this);
-        }
-
         if (!mScroller.isFinished()) {
             mScroller.abortAnimation();
         }
@@ -357,6 +317,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         if (getChildCount() == 0) {
             return;
         }
+
 
         mCurrentPage = Math.max(0, Math.min(currentPage, getPageCount() - 1));
         updateCurrentPageScroll();
@@ -451,13 +412,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             invalidate();
             return true;
         } else if (mNextPage != INVALID_PAGE) {
-            /// M: when scroll to page, call the appropriate callback for the current and next page.
-            moveInAppWidget(mNextPage);
-            sCanCallEnterAppWidget = true;
-            if (mNextPage != mCurrentPage) {
-                leaveAppWidget(mCurrentPage);
-                enterAppWidget(mNextPage);
-            }
             mCurrentPage = Math.max(0, Math.min(mNextPage, getPageCount() - 1));
             mNextPage = INVALID_PAGE;
             notifyPageSwitchListener();
@@ -527,9 +481,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
         // The children are given the same width and height as the workspace
         // unless they were set to WRAP_CONTENT
-        if (DEBUG) {
-            Log.d(TAG, "PagedView.onMeasure(): " + widthSize + ", " + heightSize);
-        }
+        if (DEBUG) Log.d(TAG, "PagedView.onMeasure(): " + widthSize + ", " + heightSize);
         final int childCount = getChildCount();
         for (int i = 0; i < childCount; i++) {
             // disallowing padding in paged view (just pass 0)
@@ -557,11 +509,8 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
             child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             maxChildHeight = Math.max(maxChildHeight, child.getMeasuredHeight());
-            if (LauncherLog.DEBUG_LAYOUT) {
-                LauncherLog.d(TAG, "measure-child " + i + ": child = " + child
-                        + ", childWidthMode = " + childWidthMode + ", childHeightMode = "
-                        + childHeightMode + ", this = " + this);
-            }            
+            if (DEBUG) Log.d(TAG, "\tmeasure-child" + i + ": " + child.getMeasuredWidth() + ", "
+                    + child.getMeasuredHeight());
         }
 
         if (heightMode == MeasureSpec.AT_MOST) {
@@ -606,11 +555,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         int delta = newX - getScrollX();
 
         final int pageCount = getChildCount();
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "Scroll to new page without moving pages: newCurrentPage = "
-                    + newCurrentPage + ", newX = " + newX + ", mScrollX = " + mScroller);
-        }
-
         for (int i = 0; i < pageCount; i++) {
             View page = (View) getPageAt(i);
             page.setX(page.getX() + delta);
@@ -639,10 +583,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         int heightSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight(), MeasureSpec.EXACTLY);
         requestLayout();
         measure(widthSpec, heightSpec);
-        /// M: If call setLayoutScale before onAttachedToWindow, measure widthSize = 0, heightSize = 0, not layout.
-        if (getMeasuredWidth() != 0 && getMeasuredHeight() != 0) {
-            layout(getLeft(), getTop(), getRight(), getBottom());
-        }
+        layout(getLeft(), getTop(), getRight(), getBottom());
         for (int i = 0; i < childCount; i++) {
             final View child = getPageAt(i);
             child.setX(childrenX[i]);
@@ -769,11 +710,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
     protected int getRelativeChildOffset(int index) {
         if (mChildRelativeOffsets != null && mChildRelativeOffsets[index] != -1) {
-            if (LauncherLog.DEBUG_DRAW) {
-                LauncherLog.d(TAG, "getRelativeChildOffset 1: index = " + index +
-                        ", mChildRelativeOffsets[" + index + "] = " + mChildRelativeOffsets[index] +
-                        ", this = " + this);
-            }
             return mChildRelativeOffsets[index];
         } else {
             final int padding = getPaddingLeft() + getPaddingRight();
@@ -781,12 +717,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                     (getMeasuredWidth() - padding - getChildWidth(index)) / 2;
             if (mChildRelativeOffsets != null) {
                 mChildRelativeOffsets[index] = offset;
-            }
-            if (LauncherLog.DEBUG_DRAW) {
-                LauncherLog.d(TAG, "getRelativeChildOffset 2: index = " + index
-                        + ", mPaddingLeft = " + getPaddingLeft() + ", mPaddingRight = " + getPaddingRight()
-                        + ", padding = " + padding + ", offset = " + offset + ", measure width = "
-                        + getMeasuredWidth() + ", this = " + this);
             }
             return offset;
         }
@@ -851,12 +781,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
         // Find out which screens are visible; as an optimization we only call draw on them
         final int pageCount = getChildCount();
-        if (LauncherLog.DEBUG_MOTION || LauncherLog.DEBUG_DRAW) {
-            LauncherLog.d(TAG, "dispatchDraw: mScrollX = " + mScroller + ", screenCenter = "
-                    + screenCenter + ", mOverScrollX = " + mOverScrollX + ", pageCount = "
-                    + pageCount + ", mLeft = " + getLeft() + ", mRight = " + getRight() + ", this = " + this);
-        }
-
         if (pageCount > 0) {
             getVisiblePages(mTempVisiblePagesRange);
             final int leftScreen = mTempVisiblePagesRange[0];
@@ -868,12 +792,20 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 canvas.clipRect(getScrollX(), getScrollY(), getScrollX() + getRight() - getLeft(),
                         getScrollY() + getBottom() - getTop());
 
-
+                // On certain graphics drivers, if you draw to a off-screen buffer that's not
+                // used, it can lead to poor performance. We were running into this when
+                // setChildrenLayersEnabled was called on a CellLayout; that triggered a re-draw
+                // of that CellLayout's hardware layer, even if that CellLayout wasn't visible.
+                // As a fix, below we set pages that aren't going to be rendered are to be
+                // View.INVISIBLE, preventing re-drawing of their hardware layer
                 for (int i = getChildCount() - 1; i >= 0; i--) {
                     final View v = getPageAt(i);
                     if (mForceDrawAllChildrenNextFrame ||
                                (leftScreen <= i && i <= rightScreen && shouldDrawChild(v))) {
+                        v.setVisibility(VISIBLE);
                         drawChild(canvas, v, drawingTime);
+                    } else {
+                        v.setVisibility(INVISIBLE);
                     }
                 }
                 mForceDrawAllChildrenNextFrame = false;
@@ -932,7 +864,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             if (mCurrentPage > 0) {
                 getPageAt(mCurrentPage - 1).addFocusables(views, direction, focusableMode);
             }
-        } else if (direction == View.FOCUS_RIGHT) {
+        } else if (direction == View.FOCUS_RIGHT){
             if (mCurrentPage < getPageCount() - 1) {
                 getPageAt(mCurrentPage + 1).addFocusables(views, direction, focusableMode);
             }
@@ -997,11 +929,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (LauncherLog.DEBUG_MOTION) {
-            LauncherLog.d(TAG, "onInterceptTouchEvent: ev = " + ev +
-                    ", mScrollX = " + mScroller + ", this = " + this);
-        }
-
         /*
          * This method JUST determines whether we want to intercept the motion.
          * If we return true, onTouchEvent will be called and we do the actual
@@ -1010,10 +937,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         acquireVelocityTrackerAndAddMovement(ev);
 
         // Skip touch handling if there are no pages to swipe
-        if (getChildCount() <= 0) {
-            LauncherLog.d(TAG, "There are no pages to swipe, page count = " + getChildCount());
-            return super.onInterceptTouchEvent(ev);
-        }
+        if (getChildCount() <= 0) return super.onInterceptTouchEvent(ev);
 
         /*
          * Shortcut the most recurring case: the user is in the dragging
@@ -1023,7 +947,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         final int action = ev.getAction();
         if ((action == MotionEvent.ACTION_MOVE) &&
                 (mTouchState == TOUCH_STATE_SCROLLING)) {
-            LauncherLog.d(TAG, "onInterceptTouchEvent: touch move during scrolling.");
             return true;
         }
 
@@ -1081,21 +1004,11 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                         }
                     }
                 }
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "onInterceptTouchEvent touch down: finishedScrolling = "
-                            + finishedScrolling + ", mScrollX = " + mScroller + ", xDist = " + xDist
-                            + ", mTouchState = " + mTouchState + ", this = " + this);
-                }
                 break;
             }
 
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                /*
-                 * It means the workspace is in the middle if the scrollX can
-                 * not be divided by the width of its child, need to snap to edge.
-                 */
-                snapToDestination();
                 mTouchState = TOUCH_STATE_REST;
                 mAllowLongPress = false;
                 mActivePointerId = INVALID_POINTER;
@@ -1130,7 +1043,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
          */
         final int pointerIndex = ev.findPointerIndex(mActivePointerId);
         if (pointerIndex == -1) {
-            LauncherLog.d(TAG, "determineScrollingStart pointerIndex == -1.");
             return;
         }
         final float x = ev.getX(pointerIndex);
@@ -1256,10 +1168,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
         // Skip touch handling if there are no pages to swipe
-        if (getChildCount() <= 0) {
-            LauncherLog.d(TAG, "There is no child in PagedView, child count = " + getChildCount());
-            return super.onTouchEvent(ev);
-        }
+        if (getChildCount() <= 0) return super.onTouchEvent(ev);
 
         acquireVelocityTrackerAndAddMovement(ev);
 
@@ -1280,11 +1189,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             mLastMotionXRemainder = 0;
             mTotalMotionX = 0;
             mActivePointerId = ev.getPointerId(0);
-            if (LauncherLog.DEBUG) {
-                LauncherLog.d(TAG, "Touch down: mDownMotionX = " + mDownMotionX
-                        + ", mTouchState = " + mTouchState + ", mCurrentPage = " + mCurrentPage
-                        + ", mScrollX = " + mScroller + ", this = " + this);
-            }
             if (mTouchState == TOUCH_STATE_SCROLLING) {
                 pageBeginMoving();
             }
@@ -1292,36 +1196,10 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
         case MotionEvent.ACTION_MOVE:
             if (mTouchState == TOUCH_STATE_SCROLLING) {
-                // M: Just begin to move, call the appropriate callback for the current page.
-                if (sCanSendMessage) {
-                    boolean result = moveOutAppWidget(mCurrentPage);
-                    if (!result) {
-                        /*if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                            LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "moveOut false.");
-                        }*/
-                        return true;
-                    }
-                    /*if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                        LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "moveOut true.");
-                    }*/
-                }
-
                 // Scroll to follow the motion event
                 final int pointerIndex = ev.findPointerIndex(mActivePointerId);
                 final float x = ev.getX(pointerIndex);
                 final float deltaX = mLastMotionX + mLastMotionXRemainder - x;
-                
-                /// M: Just begin to move, call the appropriate callback for the current page.
-                if (sCanCallEnterAppWidget) {
-                    int page = mCurrentPage;
-                    if (deltaX < 0) {
-                        page = mCurrentPage > 0 ? mCurrentPage - 1 : 0;
-                    } else {
-                        page = mCurrentPage < getChildCount() - 1 ? mCurrentPage + 1 : getChildCount() - 1;
-                    }
-                    sCanCallEnterAppWidget = false;
-                    enterAppWidget(page);
-                }
 
                 mTotalMotionX += Math.abs(deltaX);
 
@@ -1341,13 +1219,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                     mLastMotionXRemainder = deltaX - (int) deltaX;
                 } else {
                     awakenScrollBars();
-                }
-
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "Touch move scroll: x = " + x + ", deltaX = " + deltaX
-                            + ", mTotalMotionX = " + mTotalMotionX + ", mLastMotionX = "
-                            + mLastMotionX + ", mCurrentPage = " + mCurrentPage + ",mTouchX = "
-                            + mTouchX + " ,mLastMotionX = " + mLastMotionX + ", mScrollX = " + mScroller);
                 }
             } else {
                 determineScrollingStart(ev);
@@ -1372,24 +1243,12 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 boolean isFling = mTotalMotionX > MIN_LENGTH_FOR_FLING &&
                         Math.abs(velocityX) > mFlingThresholdVelocity;
 
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "Touch up scroll: x = " + x + ", deltaX = " + deltaX
-                            + ", mTotalMotionX = " + mTotalMotionX + ", mLastMotionX = "
-                            + mLastMotionX + ", velocityX = " + velocityX + ", mCurrentPage = "
-                            + mCurrentPage + ", pageWidth = " + pageWidth + ", isFling = "
-                            + isFling + ", isSignificantMove = " + isSignificantMove
-                            + ", mScrollX = " + mScroller);
-                }
                 // In the case that the page is moved far to one direction and then is flung
                 // in the opposite direction, we use a threshold to determine whether we should
                 // just return to the starting page, or if we should skip one further.
                 boolean returnToOriginalPage = false;
                 if (Math.abs(deltaX) > pageWidth * RETURN_TO_ORIGINAL_PAGE_THRESHOLD &&
                         Math.signum(velocityX) != Math.signum(deltaX) && isFling) {
-                    if (LauncherLog.DEBUG) {
-                        LauncherLog.d(TAG, "Return to origin page: deltaX = " + deltaX
-                                + ", velocityX = " + velocityX + ", isFling = " + isFling);
-                    }
                     returnToOriginalPage = true;
                 }
 
@@ -1400,25 +1259,13 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 if (((isSignificantMove && deltaX > 0 && !isFling) ||
                         (isFling && velocityX > 0)) && mCurrentPage > 0) {
                     finalPage = returnToOriginalPage ? mCurrentPage : mCurrentPage - 1;
-                    if (LauncherLog.DEBUG) {
-                        LauncherLog.d(TAG, "Case 1: finalPage = " + finalPage + ", mCurrentPage = "
-                                + mCurrentPage + ", velocityX = " + velocityX);
-                    }
                     snapToPageWithVelocity(finalPage, velocityX);
                 } else if (((isSignificantMove && deltaX < 0 && !isFling) ||
                         (isFling && velocityX < 0)) &&
                         mCurrentPage < getChildCount() - 1) {
                     finalPage = returnToOriginalPage ? mCurrentPage : mCurrentPage + 1;
-                    if (LauncherLog.DEBUG) {
-                        LauncherLog.d(TAG, "Case 2: finalPage = " + finalPage + ", mCurrentPage = "
-                                + mCurrentPage + ", velocityX = " + velocityX);
-                    }
                     snapToPageWithVelocity(finalPage, velocityX);
                 } else {
-                    if (LauncherLog.DEBUG) {
-                        LauncherLog.d(TAG, "Case 3: mCurrentPage = " + mCurrentPage + ", mScrollX = " + mScroller);
-                    }
-
                     snapToDestination();
                 }
             } else if (mTouchState == TOUCH_STATE_PREV_PAGE) {
@@ -1426,10 +1273,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 // (otherwise mTouchState would be TOUCH_STATE_SCROLLING), so
                 // we can just page
                 int nextPage = Math.max(0, mCurrentPage - 1);
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "TOUCH_STATE_PREV_PAGE: mCurrentPage = " + mCurrentPage
-                            + ", nextPage = " + nextPage + ", this = " + this);
-                }
                 if (nextPage != mCurrentPage) {
                     snapToPage(nextPage);
                 } else {
@@ -1440,29 +1283,12 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 // (otherwise mTouchState would be TOUCH_STATE_SCROLLING), so
                 // we can just page
                 int nextPage = Math.min(getChildCount() - 1, mCurrentPage + 1);
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "TOUCH_STATE_NEXT_PAGE: mCurrentPage = " + mCurrentPage
-                            + ", nextPage = " + nextPage + ", this = " + this);
-                }
                 if (nextPage != mCurrentPage) {
                     snapToPage(nextPage);
                 } else {
                     snapToDestination();
                 }
             } else {
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "[--Case Watcher--]Touch up unhandled: mCurrentPage = "
-                            + mCurrentPage + ", mTouchState = " + mTouchState + ", mScrollX = "
-                            + mScroller + ", this = " + this);
-                }
-                /*
-                 * M: Handle special wrong case, the child stop in the middle,
-                 * we need to snap it to destination, but we have no
-                 * efficient way to detect this case, so do the snap process
-                 * all the way, this has no side effect because the distance
-                 * will be 0 if it is a normal case.
-                 */
-                snapToDestination();
                 onUnhandledTap(ev);
             }
             mTouchState = TOUCH_STATE_REST;
@@ -1471,11 +1297,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             break;
 
         case MotionEvent.ACTION_CANCEL:
-            if (LauncherLog.DEBUG) {
-                LauncherLog.d(TAG, "Touch cancel: mCurrentPage = " + mCurrentPage
-                        + ", mTouchState = " + mTouchState + ", mScrollX = " + mScroller
-                        + ", this = " + this);
-            }
             if (mTouchState == TOUCH_STATE_SCROLLING) {
                 snapToDestination();
             }
@@ -1485,11 +1306,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             break;
 
         case MotionEvent.ACTION_POINTER_UP:
-            if (LauncherLog.DEBUG) {
-                LauncherLog.d(TAG, "Touch ACTION_POINTER_UP: mCurrentPage = " + mCurrentPage
-                        + ", mTouchState = " + mTouchState + ", mActivePointerId = "
-                        + mActivePointerId + ", this = " + this);
-            }
             onSecondaryPointerUp(ev);
             break;
         }
@@ -1578,9 +1394,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             left = getRelativeChildOffset(i);
             right = (left + getScaledMeasuredWidth(getPageAt(i)));
             if (left <= relativeOffset && relativeOffset <= right) {
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "getChildIndexForRelativeOffset i = " + i);
-                }
                 return i;
             }
         }
@@ -1591,10 +1404,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         // This functions are called enough times that it actually makes a difference in the
         // profiler -- so just inline the max() here
         final int measuredWidth = getPageAt(index).getMeasuredWidth();
-        if (LauncherLog.DEBUG_LAYOUT) {
-            LauncherLog.d(TAG, "getChildWidth: index = " + index + ", child = " + getPageAt(index)
-                    + ", measured width = " + measuredWidth + ", mMinimumWidth = " + mMinimumWidth);
-        }        
         final int minWidth = mMinimumWidth;
         return (minWidth > measuredWidth) ? minWidth : measuredWidth;
     }
@@ -1614,10 +1423,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                 minDistanceFromScreenCenter = distanceFromScreenCenter;
                 minDistanceFromScreenCenterIndex = i;
             }
-        }
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "getPageNearestToCenterOfScreen: minDistanceFromScreenCenterIndex = "
-                    + minDistanceFromScreenCenterIndex + ", mScrollX = " + mScroller);
         }
         return minDistanceFromScreenCenterIndex;
     }
@@ -1657,18 +1462,9 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         int delta = newX - mUnboundedScrollX;
         int duration = 0;
 
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "snapToPageWithVelocity: getChildOffset() = " + getChildOffset(whichPage)
-                    + ", measured width = " + +getMeasuredWidth() + ", " + getChildWidth(whichPage)
-                    + ", newX = " + newX + ", mUnboundedScrollX = " + mUnboundedScrollX
-                    + ", halfScreenSize = " + halfScreenSize);
-        }
-
         if (Math.abs(velocity) < mMinFlingVelocity) {
             // If the velocity is low enough, then treat this more as an automatic page advance
             // as opposed to an apparent physical response to flinging
-            LauncherLog.i(TAG, "snapToPageWithVelocity: velocity = " + velocity + ", whichPage = "
-                    + whichPage + ", MIN_FLING_VELOCITY = " + MIN_FLING_VELOCITY + ", this = " + this);
             snapToPage(whichPage, PAGE_SNAP_ANIMATION_DURATION);
             return;
         }
@@ -1688,13 +1484,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         // user flings, so we scale the duration by a value near to the derivative of the scroll
         // interpolator at zero, ie. 5. We use 4 to make it a little slower.
         duration = 4 * Math.round(1000 * Math.abs(distance / velocity));
-        duration = Math.min(duration, MAX_PAGE_SNAP_DURATION);
 
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "snapToPageWithVelocity: velocity = " + velocity + ", whichPage = "
-                    + whichPage + ", duration = " + duration + ", delta = " + delta + ", mScrollX = "
-                    + mScroller + ", mUnboundedScrollX = " + mUnboundedScrollX + ", this = " + this);
-        }
         snapToPage(whichPage, delta, duration);
     }
 
@@ -1715,13 +1505,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     }
 
     protected void snapToPage(int whichPage, int delta, int duration) {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "(PagedView)snapToPage whichPage = " + whichPage + ", delta = "
-                    + delta + ", duration = " + duration + ", mNextPage = " + mNextPage
-                    + ", mUnboundedScrollX = " + mUnboundedScrollX + ", mDeferScrollUpdate = "
-                    + mDeferScrollUpdate + ", mScrollX = " + mScroller + ", this = " + this);
-        }      
-  
         mNextPage = whichPage;
 
         View focusedChild = getFocusedChild();
@@ -1736,8 +1519,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             duration = Math.abs(delta);
         }
 
-        // M: when snap to page, call the appropriate callback for the current page.
-        moveOutAppWidget(whichPage);
         if (!mScroller.isFinished()) mScroller.abortAnimation();
         mScroller.startScroll(mUnboundedScrollX, 0, delta, 0, duration);
 
@@ -1830,23 +1611,14 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     protected void loadAssociatedPages(int page) {
         loadAssociatedPages(page, false);
     }
-
     protected void loadAssociatedPages(int page, boolean immediateAndOnly) {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "loadAssociatedPages: page = " + page
-                    + ", immediateAndOnly = " + immediateAndOnly + ",mContentIsRefreshable = "
-                    + mContentIsRefreshable + ", mDirtyPageContent = " + mDirtyPageContent);
-        }
-
         if (mContentIsRefreshable) {
             final int count = getChildCount();
             if (page < count) {
                 int lowerPageBound = getAssociatedLowerPageBound(page);
                 int upperPageBound = getAssociatedUpperPageBound(page);
-                if (LauncherLog.DEBUG) {
-                    LauncherLog.d(TAG, "loadAssociatedPages: " + lowerPageBound + "/"
-                            + upperPageBound + ", page = " + page + ", count = " + count);      
-                }
+                if (DEBUG) Log.d(TAG, "loadAssociatedPages: " + lowerPageBound + "/"
+                        + upperPageBound);
                 // First, clear any pages that should no longer be loaded
                 for (int i = 0; i < count; ++i) {
                     Page layout = (Page) getPageAt(i);
@@ -1898,19 +1670,10 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     protected void invalidatePageData() {
         invalidatePageData(-1, false);
     }
-
     protected void invalidatePageData(int currentPage) {
         invalidatePageData(currentPage, false);
     }
-
     protected void invalidatePageData(int currentPage, boolean immediateAndOnly) {
-        if (LauncherLog.DEBUG) {
-            LauncherLog.d(TAG, "invalidatePageData: currentPage = " + currentPage 
-                    + ", immediateAndOnly = " + immediateAndOnly + ", mIsDataReady = "
-                    + mIsDataReady + ", mContentIsRefreshable = " + mContentIsRefreshable
-                    + ", mScrollX = " + mScroller + ", this = " + this);
-        }
-        
         if (!mIsDataReady) {
             return;
         }
@@ -1942,16 +1705,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
 
             // Load any pages that are necessary for the current window of views
             loadAssociatedPages(mCurrentPage, immediateAndOnly);
-            if (LauncherLog.DEBUG) {
-                LauncherLog.d(TAG, "[--Case Watcher--]invalidatePageData: currentPage = " + currentPage
-                        + ", immediateAndOnly = " + immediateAndOnly + ", mScrollX = " + mScroller);
-            }
-            /*
-             * M: The scroller is force finished at the very begin, sometimes the
-             * page will stop in the middle, we need to snap it to the right
-             * destination to make pages position to the bounds.
-             */
-            snapToDestination();
             requestLayout();
         }
     }
@@ -1973,7 +1726,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     }
 
     protected boolean isScrollingIndicatorEnabled() {
-        return true;
+        return true;//!LauncherApplication.isScreenLarge();
     }
 
     Runnable hideScrollingIndicatorRunnable = new Runnable() {
@@ -2001,10 +1754,10 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             updateScrollingIndicatorPosition();
             mScrollIndicator.setVisibility(View.VISIBLE);
             cancelScrollingIndicatorAnimations();
-            if (immediately || mScrollingPaused) {
+            if (immediately) {
                 mScrollIndicator.setAlpha(1f);
             } else {
-                mScrollIndicatorAnimator = LauncherAnimUtils.ofFloat(mScrollIndicator, "alpha", 1f);
+                mScrollIndicatorAnimator = ObjectAnimator.ofFloat(mScrollIndicator, "alpha", 1f);
                 mScrollIndicatorAnimator.setDuration(sScrollIndicatorFadeInDuration);
                 mScrollIndicatorAnimator.start();
             }
@@ -2021,28 +1774,16 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         if (getChildCount() <= 1) return;
         if (!isScrollingIndicatorEnabled()) return;
 
-        // M: Per our UE design, we never hide scrolling indicator when the user
-        // is moving the pages.
-        //
-        // ALPS00414625: [Launcher] Scrollbar disappear
-        if (isPageMoving()) return;
-
         getScrollingIndicator();
         if (mScrollIndicator != null) {
             // Fade the indicator out
-
-            // M: No need to update indicator here. We will update it when we
-            // want to show it.
-            //
-            // ALPS00415515: [Launcher] The scrollbar is not normal in APP list
-            //updateScrollingIndicatorPosition();
-
+            updateScrollingIndicatorPosition();
             cancelScrollingIndicatorAnimations();
-            if (immediately || mScrollingPaused) {
+            if (immediately) {
                 mScrollIndicator.setVisibility(View.INVISIBLE);
                 mScrollIndicator.setAlpha(0f);
             } else {
-                mScrollIndicatorAnimator = LauncherAnimUtils.ofFloat(mScrollIndicator, "alpha", 0f);
+                mScrollIndicatorAnimator = ObjectAnimator.ofFloat(mScrollIndicator, "alpha", 0f);
                 mScrollIndicatorAnimator.setDuration(sScrollIndicatorFadeOutDuration);
                 mScrollIndicatorAnimator.addListener(new AnimatorListenerAdapter() {
                     private boolean cancelled = false;
@@ -2170,242 +1911,4 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     public boolean onHoverEvent(android.view.MotionEvent event) {
         return true;
     }
-    
-    /**
-     * M: Call the "enterAppWidgetScreen" callback for the IMTKWidget on the given page when slide into the given page.
-     * 
-     * @param page
-     */
-/*    public void enterAppWidget(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).enterAppwidgetScreen();
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "action_move: enterAppWidgetScreen whichMtkWidgetView = "
-                        + mtkWidgetView);
-            }
-        }
-    }*/
-    
-    /**
-     * M: Call the "leaveAppwidgetScreen" callback for the IMTKWidget on the given page when slide out the given page.
-     * 
-     * @param page
-     */
-    /*public void leaveAppWidget(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).leaveAppwidgetScreen();
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "leaveAppWidgetScreen whichMtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "startDragAppWidget" callback for the IMTKWidget on the given page when long click and begin to drag
-     * appWidget.
-     * 
-     * @param page
-     */
-    /*public void startDragAppWidget(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).startDrag();
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "startDrag:mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "stopDragAppWidget" callback for the IMTKWidget on the given page when release your finger and drop
-     * appWidget on home screen.
-     * 
-     * @param page
-     */
-   /* public void stopDragAppWidget(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).setScreen(page);
-            ((IMTKWidget) mtkWidgetView).stopDrag();
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "stopDrag: mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "moveInAppWidget" callback for the IMTKWidget on the given page.
-     * 
-     * @param page
-     */
-   /* public void moveInAppWidget(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).moveIn(page);
-            sCanSendMessage = true;
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "moveIn: mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "moveOutAppWidget" callback for the IMTKWidget on the given page.
-     * 
-     * @param page
-     * @return
-     */
-    /*public boolean moveOutAppWidget(final int page) {
-        boolean result = true;
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "moveOut: mtkWidgetView = " + mtkWidgetView);
-            }
-            sCanSendMessage = false;
-            result = ((IMTKWidget) mtkWidgetView).moveOut(mCurrentPage);
-            return result;
-        }
-        return result;
-    }
-*/
-    /**
-     * M: Call the "startCovered" callback for the IMTKWidget on the given page when enter all apps list.
-     * 
-     * @param page
-     */
-    /*public void startCovered(final int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).startCovered(page);
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "startCovered mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "stopCovered" callback for the IMTKWidget on the given page when leave all apps list.
-     * 
-     * @param page
-     */
-    /*public void stopCovered(int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).stopCovered(page);
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "stopCovered mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "onPauseWhenShown" callback for the IMTKWidget on the given page when the activity is paused.
-     * 
-     * @param page
-     */
-    /*public void onPauseWhenShown(int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).onPauseWhenShown(page);
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "onPauseWhenShown: mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "onResumeWhenShown" callback for the IMTKWidget on the given page when the activity is resumed.
-     * 
-     * @param page
-     */
-    /*public void onResumeWhenShown(int page) {
-        final View mtkWidgetView = getMTKWidgetView(page);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).onResumeWhenShown(page);
-            if (LauncherLog.DEBUG_SURFACEWIDGET) {
-                LauncherLog.d(Launcher.TAG_SURFACEWIDGET, "onResumeWhenShown: mtkWidgetView = " + mtkWidgetView);
-            }
-        }
-    }*/
-
-    /**
-     * M: Call the "setAppWidgetIdAndScreen" callback for the IMTKWidget on the given page, set the appWidgetId and page to
-     * the appWidget
-     * 
-     * @param hostView the view host the IMTKWidget
-     * @param page
-     * @param appWidgetId
-     */
-    /*public void setAppWidgetIdAndScreen(View hostView, int page, int appWidgetId) {
-        final View mtkWidgetView = searchIMTKWidget(hostView);
-        if (mtkWidgetView != null) {
-            ((IMTKWidget) mtkWidgetView).setScreen(page);
-            ((IMTKWidget) mtkWidgetView).setWidgetId(appWidgetId);
-        }
-    }*/
-
-    /**
-     * M: Find the IMTKWiget View on the given page.
-     * 
-     * @param page
-     * @return the IMTKWidget view on the given page
-     */
-    /*public View getMTKWidgetView(int page) {
-        final View whichHostView = getChildAt(page);
-        final View mtkWidgetView = searchIMTKWidget(whichHostView);
-        return mtkWidgetView;
-    }
-*/
-    /**
-     * M: Find the IMTKWidget View which providerName equals the given providerName.
-     * 
-     * @param hostView
-     * @param providerName
-     * @return
-     */
-    /*public View searchIMTKWidget(View hostView, String providerName) {
-        if (hostView instanceof IMTKWidget) {
-            return hostView;
-        } else if (hostView instanceof ViewGroup) {
-            int childCount = ((ViewGroup) hostView).getChildCount();
-            for (int i = 0; i < childCount; i++) {
-                View mtkWidgetView = searchIMTKWidget(((ViewGroup) hostView).getChildAt(i), providerName);
-                if (mtkWidgetView != null) {
-                    View v = (View) mtkWidgetView.getParent();
-                    if (v instanceof LauncherAppWidgetHostView) {
-                        LauncherAppWidgetHostView parent = (LauncherAppWidgetHostView) v;
-                        AppWidgetProviderInfo info = (AppWidgetProviderInfo) parent.getAppWidgetInfo();
-                        if (info.provider.getClassName().equals(providerName)) {
-                            return mtkWidgetView;
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }*/
-
-    /**
-     * M: Find the IMTKWidget view.
-     * 
-     * @param hostView
-     * @return
-     */
-    /*private View searchIMTKWidget(View hostView) {
-        if (hostView instanceof IMTKWidget) {
-            return hostView;
-        } else if (hostView instanceof ViewGroup) {
-            int childCount = ((ViewGroup) hostView).getChildCount();
-            for (int i = 0; i < childCount; i++) {
-                View mtkWidgetView = searchIMTKWidget(((ViewGroup) hostView).getChildAt(i));
-                if (mtkWidgetView != null) {
-                    return mtkWidgetView;
-                }
-            }
-        }
-        return null;
-    }
-}*/
+}
