@@ -33,28 +33,24 @@ public class FtpFileAdapter extends BaseAdapter {
 		mFileList = musicList ;
 	}
 
-	@Override
 	public int getCount() 
 	{
 		Log.v(TAG, "getCount  ###"  + mFileList.size() );
 		return mFileList.size();
 	}
 
-	@Override
 	public FTPFile getItem(int position) 
 	{
 		// TODO Auto-generated method stub
 		return mFileList.get(position);
 	}
 
-	@Override
 	public long getItemId(int position)
 	{
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
 	public View getView(int position, View convertview, ViewGroup viewGroup) {
 		
 		View view = null;

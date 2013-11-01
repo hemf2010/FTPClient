@@ -38,25 +38,21 @@ public class UploadFileChooserAdapter extends BaseAdapter {
 		this.mContext = context;
 	}
 
-	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
 		return mFileLists.size();
 	}
 
-	@Override
 	public FileInfo getItem(int position) {
 		// TODO Auto-generated method stub
 		return mFileLists.get(position);
 	}
 
-	@Override
 	public long getItemId(int position) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		// TODO Auto-generated method stub
 		/*View view = null;

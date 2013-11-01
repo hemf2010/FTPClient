@@ -5,5 +5,5 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">FTPMainActivity</string>
     <string name="username">anonymous</string>
-
+	<string name="default_scroll_format">Page %1$d of %2$d</string>
 </resources>

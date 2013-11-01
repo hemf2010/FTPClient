@@ -26,13 +26,11 @@ class DownloadFTPDataTransferListener implements
 		this.mHandler =  mHandler;
 	}
 
-	@Override
 	public void aborted() {
 		// TODO Auto-generated method stub
 		LogUtils.v(TAG, "FTPDataTransferListener : aborted");
 	}
 
-	@Override
 	public void completed() {
 		// TODO Auto-generated method stub
 		LogUtils.v(TAG, "FTPDataTransferListener : completed");
@@ -40,19 +38,16 @@ class DownloadFTPDataTransferListener implements
 		mHandler.sendEmptyMessage(GlobalConstant.MSG_PROGRESSBAR_DOWNLOAD_SET_MAX);
 	}
 
-	@Override
 	public void failed() {
 		// TODO Auto-generated method stub
 		LogUtils.v(TAG, "FTPDataTransferListener : failed");
 	}
 
-	@Override
 	public void started() {
 		// TODO Auto-generated method stub
 		LogUtils.v(TAG, "FTPDataTransferListener : started");
 	}
 
-	@Override
 	public void transferred(int length) {
 		totolTransferred += length;
 		float percent = (float) totolTransferred / this.fileSize;

@@ -11,7 +11,6 @@
         android:layout_alignParentTop="true"
         android:gravity="left"
         android:orientation="horizontal"
-        android:padding="@dimen/padding_medium"
         android:textSize="20sp" >
 
         <TextView
@@ -65,50 +64,43 @@
             android:paddingLeft="1px"
             android:text="本地目录" />
     </LinearLayout>
-<!-- com.example.ftp4j_demo2.view.ScreenHorizontalScrollView -->
-    <HorizontalScrollView
+
+    <!-- com.example.ftp4j_demo2.view.PagedView -->
+    <com.example.ftp4j_demo2.view.PagedView
         android:id="@+id/contentViw"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:fillViewport="true"
         android:layout_above="@id/download_bottom_bar"
         android:layout_below="@id/temp1"
         android:orientation="horizontal" >
 
-        <LinearLayout
+        <com.example.ftp4j_demo2.view.PageListViewLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal" >
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <ListView
+                android:id="@+id/listviewRemoteFile"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal" >
-<!-- com.example.ftp4j_demo2.view.ScreenListView -->
-                <com.example.ftp4j_demo2.view.ScreenListView
-                    android:id="@+id/listviewRemoteFile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:cacheColorHint="#00000000" >
-                </com.example.ftp4j_demo2.view.ScreenListView>
-            </LinearLayout>
-            
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" >
+                android:layout_gravity="center_vertical"
+                android:cacheColorHint="#00000000" >
+            </ListView>
+        </com.example.ftp4j_demo2.view.PageListViewLayout>
 
-                <com.example.ftp4j_demo2.view.ScreenListView
-                    android:id="@+id/listviewLocalFile"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:cacheColorHint="#00000000" >
-                </com.example.ftp4j_demo2.view.ScreenListView>
-            </LinearLayout>
-           
-        </LinearLayout>
-    </HorizontalScrollView>
- 
+        <com.example.ftp4j_demo2.view.PageListViewLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <ListView
+                android:id="@+id/listviewLocalFile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:cacheColorHint="#00000000" >
+            </ListView>
+        </com.example.ftp4j_demo2.view.PageListViewLayout>
+    </com.example.ftp4j_demo2.view.PagedView>
+
 </RelativeLayout>

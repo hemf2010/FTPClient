@@ -14,7 +14,6 @@ public class DameonFtpConnector implements Runnable {
 	}
 
 
-	@Override
 	public void run() {
 		Log.v(TAG, "DameonFtpConnector ### run");
 		while (mDameonRunning) {

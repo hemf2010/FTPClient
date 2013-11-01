@@ -31,6 +31,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -52,9 +53,9 @@ import com.example.ftp4j_demo2.R;
  * An abstraction of the original Workspace which supports browsing through a
  * sequential list of "pages"
  */
-public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarchyChangeListener {
+public class PagedView extends ViewGroup implements ViewGroup.OnHierarchyChangeListener {
     private static final String TAG = "PagedView";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     protected static final int INVALID_PAGE = -1;
 
     // the min drag distance for a fling to register, to prevent random page shifts
@@ -191,15 +192,19 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         void onPageSwitch(View newPage, int newPageIndex);
     }
 
-    public PagedView(Context context) {
-        this(context, null);
-    }
-
     public PagedView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
+		super(context, attrs);
+		init();
+		// TODO Auto-generated constructor stub
+	}
 
-    public PagedView(Context context, AttributeSet attrs, int defStyle) {
+	public PagedView(Context context) {
+		super(context);
+		init();
+		// TODO Auto-generated constructor stub
+	}
+
+	public PagedView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
         TypedArray a = context.obtainStyledAttributes(attrs,
@@ -655,7 +660,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         }
     }
 
-    @Override
     public void onChildViewAdded(View parent, View child) {
         // This ensures that when children are added, they get the correct transforms / alphas
         // in accordance with any scroll effects.
@@ -664,7 +668,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         invalidateCachedOffsets();
     }
 
-    @Override
     public void onChildViewRemoved(View parent, View child) {
     }
 
@@ -1636,7 +1639,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
                     }
                     if (lowerPageBound <= i && i <= upperPageBound) {
                         if (mDirtyPageContent.get(i)) {
-                            syncPageItems(i, (i == page) && immediateAndOnly);
+                            //syncPageItems(i, (i == page) && immediateAndOnly);
                             mDirtyPageContent.set(i, false);
                         }
                     }
@@ -1659,13 +1662,13 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
      * guaranteed that syncPageItems() will be called for a particular page before it is shown,
      * and therefore, individual page items do not need to be updated in this method.
      */
-    public abstract void syncPages();
+    //public abstract void syncPages();
 
     /**
      * This method is called to synchronize the items that are on a particular page.  If views on
      * the page can be reused, then they should be updated within this method.
      */
-    public abstract void syncPageItems(int page, boolean immediate);
+    //public abstract void syncPageItems(int page, boolean immediate);
 
     protected void invalidatePageData() {
         invalidatePageData(-1, false);
@@ -1684,7 +1687,7 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
             mNextPage = INVALID_PAGE;
 
             // Update all the pages
-            syncPages();
+            //syncPages();
 
             // We must force a measure after we've loaded the pages to update the content width and
             // to determine the full scroll width
@@ -1715,7 +1718,9 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
         if (mHasScrollIndicator && mScrollIndicator == null) {
             ViewGroup parent = (ViewGroup) getParent();
             if (parent != null) {
-                mScrollIndicator = (View) (parent.findViewById(R.id.paged_view_indicator));
+            	LayoutInflater layoutInflater = LayoutInflater.from(getContext());
+                View root = layoutInflater.inflate(R.layout.scroll_indicator, parent);
+                mScrollIndicator = (View) (root.findViewById(R.id.paged_view_indicator));
                 mHasScrollIndicator = mScrollIndicator != null;
                 if (mHasScrollIndicator) {
                     mScrollIndicator.setVisibility(View.VISIBLE);
@@ -1730,7 +1735,6 @@ public abstract class PagedView extends ViewGroup implements ViewGroup.OnHierarc
     }
 
     Runnable hideScrollingIndicatorRunnable = new Runnable() {
-        @Override
         public void run() {
             hideScrollingIndicator(false);
         }

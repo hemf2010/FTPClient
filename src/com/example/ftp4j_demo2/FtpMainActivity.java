@@ -160,14 +160,12 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		currDirView = (LinearLayout) findViewById(R.id.currDir);
 		serverRoot = (TextView) findViewById(R.id.serverRoot);
 		serverRoot.setOnClickListener(new View.OnClickListener() {
-			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				mExecutorServiceProxy.executeCWDRequest("/");
 			}
 		});
 		mListViewRemote.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-			@Override
 			public void onItemClick(AdapterView<?> adapterView, View view,
 					int positioin, long id) {
 				if (mFileList.get(positioin).getType() == FTPFile.TYPE_DIRECTORY) {
@@ -178,7 +176,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 
 		mListViewRemote.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
-					@Override
 					public boolean onItemLongClick(AdapterView<?> adapterView,
 							View view, int positioin, long id) {
 						mSelectedPosistion = positioin;
@@ -188,7 +185,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 
 		mListViewRemote.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
 
-					@Override
 					public void onCreateContextMenu(ContextMenu menu, View v,
 							ContextMenuInfo menuInfo) {
 						Log.v(TAG, "onCreateContextMenu ");
@@ -198,7 +194,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		
 		mListViewLocal.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
-			@Override
 			public void onItemClick(AdapterView<?> adapterView, View view,
 					int position, long id) {
 				// TODO Auto-generated method stub
@@ -214,7 +209,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 
 		mListViewLocal.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
-					@Override
 					public boolean onItemLongClick(AdapterView<?> adapterView,
 							View view, int positioin, long id) {
 						mSelectedPosistion = positioin;
@@ -224,7 +218,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 
 		mListViewLocal.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
 
-					@Override
 					public void onCreateContextMenu(ContextMenu menu, View v,
 							ContextMenuInfo menuInfo) {
 						Log.v(TAG, "onCreateContextMenu ");
@@ -235,7 +228,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		
 		localRoot.setOnClickListener(new View.OnClickListener() {
 			
-			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				updateFileItems(mSdcardRootPath);
@@ -249,7 +241,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		remoteRoot = (Button) findViewById(R.id.remote_root);
 		remoteRoot.setOnClickListener(new View.OnClickListener() {
 			
-			@Override
 			public void onClick(View v) {
 
 			}
@@ -342,7 +333,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		editUser.setText(R.string.username);
 		editUser.setOnFocusChangeListener(new View.OnFocusChangeListener() {
 			
-			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
 				// TODO Auto-generated method stub
 				if(hasFocus){
@@ -358,7 +348,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 				.setView(rootLoadView)
 				.setPositiveButton("连接FTP", new DialogInterface.OnClickListener() {
 
-					@Override
 					public void onClick(DialogInterface uploadDialog, int which) {
 						int tempFtpPort;
 						if (TextUtils.isEmpty(editHost.getText()) || 
@@ -402,7 +391,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		progressDialog
 				.setOnDismissListener(new DialogInterface.OnDismissListener() {
 
-					@Override
 					public void onDismiss(DialogInterface dialog) {
 						// TODO Auto-generated method stub
 						setLoadProgress(0);
@@ -424,7 +412,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 				.setView(rootLoadView)
 				.setPositiveButton("确定", new DialogInterface.OnClickListener() {
 
-					@Override
 					public void onClick(DialogInterface uploadDialog, int which) {
 						// TODO Auto-generated method stub
 						if (!TextUtils.isEmpty(edit.getText())) {
@@ -434,7 +421,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 				})
 				.setNegativeButton("取消", new DialogInterface.OnClickListener() {
 
-					@Override
 					public void onClick(DialogInterface uploadDialog, int which) {
 						// TODO Auto-generated method stub
 
@@ -469,7 +455,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 		return true;
 	}
 
-	@Override
 	public void onClick(View v) {
 		// TODO Auto-generated method stub
 
@@ -589,7 +574,6 @@ public class FtpMainActivity extends Activity implements OnClickListener {
 			mStringBuilder.append(eachDir[i]+ "/");
 			meachDirName.setOnClickListener(new View.OnClickListener() {
 				
-				@Override
 				public void onClick(View v) {
 					// TODO Auto-generated method stub
 					String CwdDir = (String) v.getTag();
